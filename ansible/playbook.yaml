@@ -1,0 +1,111 @@
+---
+- name: k8s setup
+  hosts: all
+  become: true
+  tasks:
+  - name: enable module br_netfilter
+    shell: modprobe br_netfilter
+    
+  - name: entry in /etc/modules-load.d/k8s.conf
+    copy:
+      src: ./modulesk8s.conf
+      dest: /etc/modules-load.d/k8s.conf
+    
+  - name: entry in /etc/sysctl.d/k8s.conf
+    copy:
+      src: ./sysctlk8s.conf
+      dest: /etc/sysctl.d/k8s.conf
+    
+  - name: sudo sysctl --system
+    shell: sysctl --system
+    
+  - name: update repo
+    apt:
+      name: "{{item}}"
+      update_cache: yes
+    loop:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+    
+  - name: add key
+    apt_key:
+      keyring: /usr/share/keyrings/docker-archive-keyring.gpg
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+    
+  - name: install key
+    apt_repository:
+      filename: docker
+      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu bionic stable
+      state: present
+    
+  - name: install docker engine
+    apt:
+      name: "{{item}}"
+      state: present
+    loop:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    
+  - name: make docker use systemd for cgroups
+    copy:
+      src:  ./daemon.json
+      dest: /etc/docker/daemon.json
+    
+  - name: enable docker service
+    service:
+      name: docker
+      state: reloaded
+      enabled: true
+    
+  - name: install k8s pre-req
+    apt:
+      name: "{{item}}"
+      update_cache: yes
+    loop:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    
+  - name: add key
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+      state: present
+    
+  - name: install key
+    apt_repository:
+      filename: kubernetes
+      repo: deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+      state: present
+    
+  - name: install kubelet kubectl kubeadm
+    apt:
+      name: "{{item}}"
+      update_cache: yes
+    loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+- name: kubeadm init
+  hosts: master
+  become: true
+  tasks:
+  - name:
+    shell: kubeadm init --pod-network-cidr=10.0.0.0/16 --apiserver-advertise-address="{{masterip}}" --ignore-preflight-errors=all
+  - name:
+    shell: kubeadm token create --print-join-command
+    register: command
+  - name: craete kubeadm directory and install pod n/w
+    script: ./script.sh
+- name: join cluster
+  hosts: remote
+  become: true
+  tasks:
+  - name: join cluster
+    shell: "{{command.stdout}}"
+
