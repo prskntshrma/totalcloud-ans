@@ -6,7 +6,7 @@ VM os: Ubuntu 18.04 LTS. 3 vms with name master-vm, node01-vm, node02-vm which a
 If Azure is available, please cd into terraform folder and set up your credentials and then terraform apply.
 
 # 3. Master Setup
-Log into the master vm using ssh key and clone the git repo https://github.com/prskntshrma/totalcloud-ans.git. Copy the anskey into ansible folder of this git repo using scp or any other method. In the group_vars folder a file named master.yaml is present. Provide the private ip address of vm against masterip like this masterip: <private ip address>
+Log into the master vm using ssh key and clone the git repo https://github.com/prskntshrma/totalcloud-ans.git. Copy the anskey into ansible folder of this git repo using scp or any other method. In the group_vars folder a file named master.yaml is present. Provide the private ip address of vm against masterip like this masterip: [private ip address]
 
 # 4. Main task
 Run ansible-playbook playbook.yaml inside ansible directory
