@@ -92,20 +92,32 @@
     - kubeadm
     - kubectl
 - name: kubeadm init
-  hosts: master
+  hosts: all
   become: true
   tasks:
-  - name:
-    shell: kubeadm init --pod-network-cidr=10.0.0.0/16 --apiserver-advertise-address="{{masterip}}" --ignore-preflight-errors=all
-  - name:
+  - name: initializing cluster
+    shell: 'kubeadm init --pod-network-cidr=10.0.0.0/16 --apiserver-advertise-address="{{masterip}}" --ignore-preflight-errors=all'
+    when: inventory_hostname in groups['master']
+  - name: creating join token
     shell: kubeadm token create --print-join-command
     register: command
-  - name: craete kubeadm directory and install pod n/w
-    script: ./script.sh
-- name: join cluster
-  hosts: remote
-  become: true
-  tasks:
+    when: inventory_hostname in groups['master']
+  - name: create kube directory
+    file:
+      remote_src: yes
+      path: "/home/ansibleadmin/.kube"
+      state: directory
+    when: inventory_hostname in groups['master']
+  - name: copy config file
+    copy:
+      remote_src: yes
+      src: /etc/kubernetes/admin.conf
+      dest: "/home/ansibleadmin/.kube/config"
+    when: inventory_hostname in groups['master']
+  - name: install pod n/w
+    shell: kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+    when: inventory_hostname in groups['master']
   - name: join cluster
-    shell: "{{command.stdout}}"
+    shell: "{{hostvars['localhost']['command']['stdout']}}"
+    when: inventory_hostname not in groups['master']
 
