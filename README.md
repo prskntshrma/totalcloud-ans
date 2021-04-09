@@ -3,7 +3,7 @@
 VM os: Ubuntu 18.04 LTS. 3 vms with name master-vm, node01-vm, node02-vm which are connected by a virtual network and have dns entries so they can refer to each other with their names. Each of the VMs should have a user ansibleadmin, same ssh key named anskey for logging into VMs for ease of configuration. The designated master vm should have ansible installed.
 
 # 2. On Azure
-If Azure is available, please cd into terraform folder and set up your credentials and then terraform apply.
+If Azure is available, please cd into terraform folder and set up your credentials and then terraform apply. You will to keep public key file at "~/sshkeys/anskey.pub"
 
 # 3. Master Setup
 Log into the master vm using ssh key and clone the git repo https://github.com/prskntshrma/totalcloud-ans.git. Copy the anskey into ansible folder of this git repo using scp or any other method. In the group_vars folder a file named master.yaml is present. Provide the private ip address of vm against masterip like this masterip: [private ip address]
